@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cubing Timer</title>
+<meta name="description" content="Free online cubing timer with CFOP, Roux, ZZ, Petrus trainers. Offline-capable PWA.">
+<meta name="theme-color" content="#2f6fe4">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cubing Timer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg%3E%3Crect x='0' y='0' width='10' height='10' rx='2' fill='%23f0565b'/%3E%3Crect x='11' y='0' width='10' height='10' rx='2' fill='%235b93ff'/%3E%3Crect x='22' y='0' width='10' height='10' rx='2' fill='%23f5c518'/%3E%3Crect x='0' y='11' width='10' height='10' rx='2' fill='%232fd382'/%3E%3Crect x='11' y='11' width='10' height='10' rx='2' fill='%23ff9a4d'/%3E%3Crect x='22' y='11' width='10' height='10' rx='2' fill='%238a92b8'/%3E%3Crect x='0' y='22' width='10' height='10' rx='2' fill='%235b93ff'/%3E%3Crect x='11' y='22' width='10' height='10' rx='2' fill='%23f0565b'/%3E%3Crect x='22' y='22' width='10' height='10' rx='2' fill='%232fd382'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=Chivo+Mono:wght@500;800&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500;800&family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&family=Outfit:wght@400;600;800&family=Roboto+Mono:wght@500;700&display=swap">
+<!-- scramble images drawn offline via canvas; CDN optional -->
+<style>
+:root{
+--bg:#eef0f6;--pan:#fff;--ink:#161a2e;--mute:#6b7396;--line:#dde1ee;--red:#d93a3f;--grn:#13a35f;--blu:#2f6fe4;--org:#f07a1f;--yel:#d9a400;
+--font-ui:'Bricolage Grotesque',system-ui,sans-serif;--font-mono:'Chivo Mono',ui-monospace,monospace;
+--time-min:64px;--time-vw:15vw;--time-max:168px;--scr-size:clamp(16px,2.6vw,24px);--scr-long:clamp(13px,1.8vw,17px);--base:15px;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){--bg:#12162a;--pan:#1b2140;--ink:#eceffc;--mute:#8a92b8;--line:#2a3158;--red:#f0565b;--grn:#2fd382;--blu:#5b93ff;--org:#ff9a4d;--yel:#f5c518;color-scheme:dark}}
+:root[data-theme="light"]{--bg:#eef0f6;--pan:#fff;--ink:#161a2e;--mute:#6b7396;--line:#dde1ee;--red:#d93a3f;--grn:#13a35f;--blu:#2f6fe4;--org:#f07a1f;--yel:#d9a400;color-scheme:light}
+:root[data-theme="dark"]{--bg:#12162a;--pan:#1b2140;--ink:#eceffc;--mute:#8a92b8;--line:#2a3158;--red:#f0565b;--grn:#2fd382;--blu:#5b93ff;--org:#ff9a4d;--yel:#f5c518;color-scheme:dark}
+:root[data-theme="midnight"]{--bg:#0b0d14;--pan:#141824;--ink:#e8ecf8;--mute:#7b849e;--line:#222838;--red:#ff5c6c;--grn:#3dd68c;--blu:#6ea8ff;--org:#ff9b4a;--yel:#ffd166;color-scheme:dark}
+:root[data-theme="forest"]{--bg:#eef6ef;--pan:#f7fbf7;--ink:#14301c;--mute:#5f7a66;--line:#cfe0d2;--red:#c23b3b;--grn:#1f8f4e;--blu:#2d6a8f;--org:#c56a1a;--yel:#b8940f;color-scheme:light}
+:root[data-theme="sunset"]{--bg:#1a1210;--pan:#261a16;--ink:#ffefe6;--mute:#c39b8a;--line:#3d2a24;--red:#ff6b5a;--grn:#7dcc6a;--blu:#6aa8ff;--org:#ff9a3c;--yel:#ffc857;color-scheme:dark}
+:root[data-theme="ocean"]{--bg:#e8f3f8;--pan:#f5fbfd;--ink:#0f2a38;--mute:#5a7888;--line:#c5dce6;--red:#d64545;--grn:#1f9d6a;--blu:#1f7ab8;--org:#d97b2d;--yel:#c9a20a;color-scheme:light}
+:root[data-theme="mono"]{--bg:#f2f2f2;--pan:#fafafa;--ink:#111;--mute:#666;--line:#ddd;--red:#b00020;--grn:#0a7a3e;--blu:#1a5cff;--org:#b85c00;--yel:#9a7b00;color-scheme:light}
+:root[data-theme="terminal"]{--bg:#0c0f0c;--pan:#121812;--ink:#c8f0c8;--mute:#6a9a6a;--line:#1e2a1e;--red:#ff6b6b;--grn:#39ff14;--blu:#66d9ef;--org:#fd971f;--yel:#e6db74;color-scheme:dark}
+:root[data-theme="rose"]{--bg:#fbf0f3;--pan:#fff7f9;--ink:#3a1524;--mute:#9a6b7c;--line:#efd3dc;--red:#d6285a;--grn:#2a9d6e;--blu:#5b6cff;--org:#e07a2f;--yel:#c9a227;color-scheme:light}
+:root[data-theme="slate"]{--bg:#e9edf3;--pan:#f6f8fb;--ink:#1a2332;--mute:#6b778c;--line:#d0d7e3;--red:#c73e4a;--grn:#1f9a64;--blu:#3b6fd8;--org:#d27a2c;--yel:#b89612;color-scheme:light}
+:root[data-size="compact"]{--base:13px;--time-min:48px;--time-vw:12vw;--time-max:120px;--scr-size:clamp(13px,2vw,18px);--scr-long:clamp(11px,1.5vw,14px)}
+:root[data-size="normal"]{--base:15px;--time-min:64px;--time-vw:15vw;--time-max:168px;--scr-size:clamp(16px,2.6vw,24px);--scr-long:clamp(13px,1.8vw,17px)}
+:root[data-size="large"]{--base:17px;--time-min:80px;--time-vw:18vw;--time-max:200px;--scr-size:clamp(18px,3vw,28px);--scr-long:clamp(14px,2vw,20px)}
+:root[data-size="huge"]{--base:19px;--time-min:96px;--time-vw:20vw;--time-max:240px;--scr-size:clamp(20px,3.4vw,32px);--scr-long:clamp(15px,2.2vw,22px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 var(--base)/1.4 var(--font-ui)}
+header,.chips,aside,#stage>.top,#quick,#simg{transition:opacity .25s}
+body.running header,body.running .chips,body.running aside,body.running #stage>.top,body.running #quick,body.running #simg{opacity:0;pointer-events:none}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;max-width:1280px;margin:auto;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.logo{display:grid;grid-template:repeat(3,7px)/repeat(3,7px);gap:2px}.logo i{border-radius:2px}
+.bar{display:flex;gap:8px;flex-wrap:wrap}
+select,button,input{font:inherit;color:inherit}
+select,button{background:var(--pan);border:1.5px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer}
+button:hover,select:hover{border-color:var(--mute)}
+:focus-visible{outline:2px solid var(--blu);outline-offset:2px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;padding:0 16px 24px;max-width:1280px;margin:auto}
+@media(max-width:860px){main{grid-template-columns:minmax(0,1fr)}}
+#stage{display:flex;flex-direction:column;gap:12px;min-width:0}
+.top{display:flex;gap:8px;align-items:center}
+#scr{flex:1;text-align:center;font:500 var(--scr-size)/1.5 var(--font-mono);padding:6px 8px;word-spacing:.15em}
+#scr.long{font-size:var(--scr-long)}
+.cfop-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding:4px 8px 4px}
+#stageRow{padding-top:0;padding-bottom:8px}
+#stageRow:empty{display:none}
+#stageRow .cfop-btn{padding:5px 12px;font-size:12px}
+.cfop-label{font-weight:800;font-size:12px;letter-spacing:.06em;color:var(--mute);text-transform:uppercase;margin-right:4px}
+.cfop-btn{background:var(--pan);border:1.5px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;font:600 13px var(--font-ui);color:var(--ink)}
+.cfop-btn:hover{border-color:var(--mute)}
+.cfop-btn.active{background:var(--blu);border-color:var(--blu);color:#fff}
+#casebar{display:none;text-align:center;color:var(--mute);font-size:14px;padding:6px 10px;margin:0 8px 8px;background:var(--pan);border:1.5px solid var(--line);border-radius:12px}
+#casebar.on{display:block}
+#casebar b{color:var(--ink);font-weight:800;font-size:15px}
+#casebar .alg{font-family:var(--font-mono);color:var(--blu);font-size:13px;margin-top:6px;word-break:break-word}
+body.cfop #ev{display:none}
+#simg{display:flex;justify-content:center;align-items:center;min-height:120px;transition:opacity .25s;margin:4px 0 8px}
+#simg:empty,#simg[hidden]{display:none;min-height:0}
+#simg canvas.scrnet{width:min(260px,85vw);height:auto;display:block;margin:0 auto}
+#pad{background:var(--pan);border:2px solid var(--line);border-radius:22px;min-height:48vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;padding:20px;transition:border-color .12s}
+#time{font:800 clamp(var(--time-min),var(--time-vw),var(--time-max))/1 var(--font-mono);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+#sub{color:var(--mute);text-align:center;min-height:1.4em}
+#pad[data-s=hold]{border-color:var(--red)}#pad[data-s=hold] #time{color:var(--red)}
+#pad[data-s=ready]{border-color:var(--grn)}#pad[data-s=ready] #time{color:var(--grn)}
+#pad[data-s=insp] #time{color:var(--org)}#pad[data-s=insp]{border-color:var(--org)}
+#man{display:none;font:600 28px var(--font-mono);text-align:center;width:min(320px,80%);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:8px}
+body.manual #man{display:block}
+#quick{display:flex;gap:8px;align-items:center;justify-content:center;min-height:40px;color:var(--mute);flex-wrap:wrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chips label{display:flex;gap:6px;align-items:center;background:var(--pan);border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chips input{accent-color:var(--blu);margin:0}
+aside{display:flex;flex-direction:column;gap:12px;min-width:0}
+.card{background:var(--pan);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px}
+.st{display:grid;grid-template-columns:1fr auto auto;gap:4px 18px;font-variant-numeric:tabular-nums}
+.st b{text-align:right;font-weight:600}.st .h{color:var(--mute);text-align:right}.st span:nth-child(3n+1){color:var(--mute)}
+#cv{width:100%;height:150px;display:block}
+#list{max-height:340px;overflow:auto;padding:6px}
+.row{display:grid;grid-template-columns:40px 1fr 1fr 1fr;width:100%;text-align:right;border:0;border-radius:8px;padding:5px 8px;background:none;font-variant-numeric:tabular-nums}
+.row:hover{background:var(--bg)}.row span:first-child{text-align:left;color:var(--mute)}.row span{color:var(--mute)}.row b{font-weight:600;color:var(--ink)}
+.row.pb b{color:var(--grn)}
+.empty{color:var(--mute);padding:14px;text-align:center}
+dialog{background:var(--pan);color:var(--ink);border:1.5px solid var(--line);border-radius:18px;padding:20px;max-width:min(460px,92vw);width:100%}
+dialog::backdrop{background:rgba(10,12,28,.55)}
+dialog h3{margin:0 0 4px;font:800 40px var(--font-mono)}
+dialog p{color:var(--mute);margin:4px 0 12px}
+dialog .s{color:var(--ink);font:500 14px/1.6 var(--font-mono);word-break:break-word}
+dialog textarea{width:100%;height:150px;background:var(--bg);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:8px;font:13px/1.4 var(--font-mono)}
+dialog input[type=text]{width:100%;padding:8px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);margin-bottom:10px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;font-weight:600;z-index:50}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.help-list{margin:0;padding-left:18px;color:var(--mute);line-height:1.7}
+.help-list b{color:var(--ink)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo" id="logo"></span>Cubing timer</div>
+  <div class="bar">
+    <select id="sess" aria-label="Session"></select>
+    <button id="newS">New session</button>
+    <button id="data">Import / export</button>
+    <button id="bt" title="Connect smart cube (Chrome/Edge, HTTPS required)">BT</button>
+    <button id="help">Help</button>
+    <button id="theme">Theme: auto</button>
+  </div>
+</header>
+<main>
+  <section id="stage">
+    <div class="cfop-row" id="methodRow">
+      <span class="cfop-label">Method</span>
+      <button type="button" class="cfop-btn" data-method="timer">Timer</button>
+      <button type="button" class="cfop-btn" data-method="cfop">CFOP</button>
+      <button type="button" class="cfop-btn" data-method="begcfop">Beginner CFOP</button>
+      <button type="button" class="cfop-btn" data-method="roux">Roux</button>
+      <button type="button" class="cfop-btn" data-method="zz">ZZ</button>
+      <button type="button" class="cfop-btn" data-method="petrus">Petrus</button>
+      <button type="button" class="cfop-btn" data-method="beginner">Beginner</button>
+    </div>
+    <div class="cfop-row" id="stageRow"></div>
+    <div class="top">
+      <select id="mode" aria-label="Mode" hidden></select>
+      <select id="ev" aria-label="Event"></select>
+      <button id="prev" aria-label="Previous scramble">‹</button>
+      <div id="scr"></div>
+      <button id="next" aria-label="Next scramble">›</button>
+    </div>
+    <div id="casebar"></div>
+    <div id="simg" aria-hidden="true"></div>
+    <div id="pad" data-s="idle" tabindex="0" aria-label="Timer pad">
+      <div id="time">0.00</div>
+      <div id="sub"></div>
+      <input id="man" type="text" inputmode="decimal" placeholder="Type a time, press Enter" autocomplete="off">
+    </div>
+    <div id="quick"></div>
+    <div class="chips">
+      <label><input type="checkbox" id="insp">Inspection (15 s)</label>
+      <label><input type="checkbox" id="hide">Hide time while solving</label>
+      <label><input type="checkbox" id="ms">Milliseconds</label>
+      <label><input type="checkbox" id="snd">Inspection sounds</label>
+      <label><input type="checkbox" id="mn">Type times in</label>
+      <label><input type="checkbox" id="img">Scramble image</label>
+      <label>Theme <select id="themeSel" aria-label="Color theme"></select></label>
+      <label>Font <select id="fontSel" aria-label="Font pair"></select></label>
+      <label>Size <select id="sizeSel" aria-label="UI size"></select></label>
+    </div>
+  </section>
+  <aside>
+    <div class="card st" id="stats"></div>
+    <div class="card"><canvas id="cv"></canvas></div>
+    <div class="card" id="list"></div>
+  </aside>
+</main>
+<dialog id="dg"></dialog>
+<div id="toast" role="status"></div>
+<script>
+const CUBETIMER_VER='2026-11-12-web';
+console.info('[Cubing Timer]',CUBETIMER_VER,'(web PWA · multi-method)');
+const $=q=>document.querySelector(q),KEY='cubetimer.v1';
+function sc(groups,mods,len){
+  const o=[];let la=-1;
+  while(o.length<len){
+    let a;do a=Math.random()*groups.length|0;while(a===la);
+    la=a;const g=groups[a];
+    o.push(g[Math.random()*g.length|0]+mods[Math.random()*mods.length|0]);
+  }
+  return o.join(' ');
+}
+const M3=['','\'','2'],M2=['','\''];
+function scSq1(){
+  const moves=[];
+  for(let i=0;i<16;i++){
+    const u=Math.floor(Math.random()*12)-5,d=Math.floor(Math.random()*12)-5;
+    moves.push(`(${u},${d})`);
+    if(i<15)moves.push('/');
+  }
+  return moves.join(' ');
+}
+function scClock(){
+  const pins=['UR','DR','DL','UL'],face=['U','R','D','L','ALL'];
+  let s='';
+  face.forEach(f=>{const n=Math.floor(Math.random()*12)-5;if(n)s+=`${f}${n>0?'+'+n:n} `});
+  pins.forEach(p=>{if(Math.random()<.5)s+=p+' '});
+  s+='y2 ';
+  face.forEach(f=>{const n=Math.floor(Math.random()*12)-5;if(n)s+=`${f}${n>0?'+'+n:n} `});
+  pins.forEach(p=>{if(Math.random()<.5)s+=p+' '});
+  return s.trim();
+}
+function scMinx(){
+  const faces=['U','R','F','L','BL','BR'],mods=['','\''];
+  const o=[];let last=-1;
+  for(let i=0;i<70;i++){
+    let a;do a=Math.random()*faces.length|0;while(a===last);
+    last=a;
+    o.push(faces[a]+mods[Math.random()*2|0]+(Math.random()<.5?'2':''));
+  }
+  return o.join(' ');
+}
+/* ========== Local scramble generators (offline, no CDN) ========== */
+/*
+ * 222: exact random-state (uniform over reachable positions)
+ * 333/OH/BLD: near-uniform HTM mixer (25 moves, WCA face-axis rules)
+ *   — true optimal random-state needs large pruning tables/workers;
+ *     this is the standard offline practice approach and mixes the cube well.
+ * Others: event-specific random-move generators
+ */
+const RS222=(function(){
+  function id(){return{cp:[0,1,2,3,4,5,6,7],co:[0,0,0,0,0,0,0,0]}}
+  function cpy(c){return{cp:c.cp.slice(),co:c.co.slice()}}
+  const CCP=[[3,0,1,2,4,5,6,7],[4,1,2,0,7,5,6,3],[1,5,2,3,0,4,6,7]];
+  const CCO=[[0,0,0,0,0,0,0,0],[2,0,0,1,1,0,0,2],[1,2,0,0,2,1,0,0]];
+  function mov(c,f){const o=cpy(c),cp=CCP[f],co=CCO[f];for(let i=0;i<8;i++){o.cp[i]=c.cp[cp[i]];o.co[i]=(c.co[cp[i]]+co[i])%3}return o}
+  function movN(c,f,n){let x=c;for(let i=0;i<n;i++)x=mov(x,f);return x}
+  function parity(a){let p=0;for(let i=0;i<a.length;i++)for(let j=i+1;j<a.length;j++)if(a[i]>a[j])p^=1;return p}
+  function solved(c){for(let i=0;i<8;i++)if(c.cp[i]!==i||c.co[i])return false;return true}
+  function key(c){return c.cp.join('')+c.co.join('')}
+  function randomState(){
+    // 2x2 with fixed orientation: any CP is reachable; only CO sum ≡ 0 (mod 3)
+    const c=id();
+    for(let i=7;i>0;i--){const j=Math.random()*(i+1)|0;[c.cp[i],c.cp[j]]=[c.cp[j],c.cp[i]]}
+    let s=0;for(let i=0;i<7;i++){c.co[i]=Math.random()*3|0;s+=c.co[i]}c.co[7]=(3-s%3)%3;
+    return c;
+  }
+  const MN=['U','U2',"U'",'R','R2',"R'",'F','F2',"F'"];
+  function invM(m){return(m/3|0)*3+(2-(m%3))}
+  function expand(start, depth){
+    const map=new Map(); // key -> move list from start
+    map.set(key(start), []);
+    let frontier=[{c:start,path:[]}];
+    for(let d=0;d<depth;d++){
+      const next=[];
+      for(const {c,path} of frontier){
+        const last=path.length?path[path.length-1]:-1;
+        const lf=last<0?-1:(last/3|0);
+        for(let f=0;f<3;f++){
+          if(f===lf)continue;
+          for(let p=1;p<=3;p++){
+            const nc=movN(c,f,p), nk=key(nc);
+            if(map.has(nk))continue;
+            const np=path.concat(f*3+(p-1));
+            map.set(nk,np);
+            next.push({c:nc,path:np});
+          }
+        }
+      }
+      frontier=next;
+    }
+    return map;
+  }
+  function scramble(){
+    const st=randomState();
+    if(solved(st))return sc([['R'],['U'],['F']],M3,9);
+    const fwd=expand(st,6);
+    const bwd=expand(id(),6);
+    let best=null;
+    for(const [k,fp] of fwd){
+      if(!bwd.has(k))continue;
+      const bp=bwd.get(k);
+      const sol=fp.concat(bp.slice().reverse().map(invM));
+      if(!best||sol.length<best.length)best=sol;
+    }
+    if(best&&best.length){
+      // scramble = inv(solution)
+      return best.slice().reverse().map(m=>MN[invM(m)]).join(' ');
+    }
+    // Fallback mixer
+    return sc([['R'],['U'],['F']],M3,11);
+  }
+  return{scramble};
+})();
+
+/* 3x3 near-uniform random-move (HTM, no consecutive same face, axis order) */
+function scramble333RS(){
+  const faces=['U','D','R','L','F','B'];
+  const axisOf=[0,0,1,1,2,2]; // U D / R L / F B
+  const mods=['','2',"'"];
+  const out=[];
+  let prevFace=-1, prevAxis=-1;
+  const len=25;
+  for(let i=0;i<len;i++){
+    let f;
+    do{
+      f=Math.random()*6|0;
+    }while(f===prevFace || (axisOf[f]===prevAxis && f<prevFace));
+    // also avoid three consecutive same axis turns stacking: if last axis same and would force opposite face only
+    prevAxis=axisOf[f];
+    prevFace=f;
+    out.push(faces[f]+mods[Math.random()*3|0]);
+  }
+  return out.join(' ');
+}
+
+const FALLBACK={
+  '333':scramble333RS,
+  '333oh':scramble333RS,
+  '333bld':scramble333RS,
+  '222':()=>RS222.scramble(),
+  '444':()=>sc([['U','D','Uw'],['R','L','Rw'],['F','B','Fw']],M3,40),
+  '555':()=>sc([['U','D','Uw','Dw'],['R','L','Rw','Lw'],['F','B','Fw','Bw']],M3,60),
+  '666':()=>sc([['U','D','Uw','Dw','3Uw'],['R','L','Rw','Lw','3Rw'],['F','B','Fw','Bw','3Fw']],M3,80),
+  '777':()=>sc([['U','D','Uw','Dw','3Uw'],['R','L','Rw','Lw','3Rw'],['F','B','Fw','Bw','3Fw']],M3,100),
+  'pyra':()=>{let s=sc([['U'],['L'],['R'],['B']],M2,10);['u','l','r','b'].forEach(t=>{const r=Math.random()*3|0;if(r)s+=' '+t+(r===2?"'":'')});return s},
+  'skewb':()=>sc([['R'],['L'],['U'],['B']],M2,9),
+  'minx':scMinx,
+  'sq1':scSq1,
+  'clock':scClock
+};
+const EV={
+  '333':['3×3'],'333oh':['3×3 OH'],'333bld':['3×3 BLD'],'222':['2×2'],
+  '444':['4×4'],'555':['5×5'],'666':['6×6'],'777':['7×7'],
+  'pyra':['Pyraminx'],'skewb':['Skewb'],'minx':['Megaminx'],'sq1':['Square-1'],'clock':['Clock']
+};
+const EV_MAP={
+  '333':'333','333oh':'333oh','333bld':'333bf','222':'222','444':'444','555':'555','666':'666','777':'777',
+  'pyra':'pyram','skewb':'skewb','minx':'minx','sq1':'sq1','clock':'clock'
+};
+
+/* ===== Multi-method trainer ===== */
+const METHODS=[
+  ['timer','Timer'],
+  ['cfop','CFOP'],
+  ['begcfop','Beginner CFOP'],
+  ['roux','Roux'],
+  ['zz','ZZ'],
+  ['petrus','Petrus'],
+  ['beginner','Beginner']
+];
+const STAGES={
+  timer:[],
+  cfop:[
+    ['cross','Cross'],['f2l','F2L'],['oll','OLL'],['pll','PLL']
+  ],
+  begcfop:[
+    ['bcross','1. Cross'],
+    ['bf2l','2. F2L'],
+    ['boll-e','3a. OLL edges'],
+    ['boll-c','3b. OLL corners'],
+    ['bpll-c','4a. PLL corners'],
+    ['bpll-e','4b. PLL edges']
+  ],
+  roux:[
+    ['fb','First Block'],['sb','Second Block'],['cmll','CMLL'],['lse','LSE']
+  ],
+  zz:[
+    ['eoline','EOLine'],['zzf2l','ZZ F2L'],['oll','OLL'],['pll','PLL']
+  ],
+  petrus:[
+    ['222','2×2×2'],['223','2×2×3'],['eo','Edge Control'],['pf2l','F2L'],['pll','PLL']
+  ],
+  beginner:[
+    ['wcross','White cross'],['wcorners','White corners'],['medges','Middle edges'],
+    ['ycross','Yellow cross'],['ycorners','Yellow corners'],['epll','Edge PLL']
+  ]
+};
+// legacy MODES flat list for hidden select
+const MODES=[['timer','Timer']].concat(
+  STAGES.cfop.map(([k,l])=>[k,'CFOP · '+l]),
+  STAGES.begcfop.map(([k,l])=>[k,'Beg CFOP · '+l]),
+  STAGES.roux.map(([k,l])=>[k,'Roux · '+l]),
+  STAGES.zz.map(([k,l])=>[k,'ZZ · '+l]),
+  STAGES.petrus.map(([k,l])=>[k,'Petrus · '+l]),
+  STAGES.beginner.map(([k,l])=>[k,'Beginner · '+l])
+);
+
+const PLL_CASES=[
+  ['H','H perm',"M2 U M2 U2 M2 U M2"],
+  ['Ua','Ua perm',"R2 U' R' U' R U R U R U' R"],
+  ['Ub','Ub perm',"R' U R' U' R' U' R' U R U R2"],
+  ['Z','Z perm',"M2 U M2 U M' U2 M2 U2 M' U2"],
+  ['Aa','Aa perm',"x R' U R' D2 R U' R' D2 R2 x'"],
+  ['Ab','Ab perm',"x R2 D2 R U R' D2 R U' R x'"],
+  ['E','E perm',"x' R U' R' D R U R' D' R U R' D R U' R' D' x"],
+  ['F','F perm',"R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R"],
+  ['Ga','Ga perm',"R2 U R' U R' U' R U' R2 U' D R' U R D'"],
+  ['Gb','Gb perm',"R' U' R U D' R2 U R' U R U' R U' R2 D"],
+  ['Gc','Gc perm',"R2 U' R U' R U R' U R2 U D' R U' R' D"],
+  ['Gd','Gd perm',"R U R' U' D R2 U' R U' R' U R' U R2 D'"],
+  ['Ja','Ja perm',"R U R' F' R U R' U' R' F R2 U' R' U'"],
+  ['Jb','Jb perm',"R U R' F' R U R' U' R' F R2 U' R'"],
+  ['Na','Na perm',"R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'"],
+  ['Nb','Nb perm',"R' U R U' R' F' U' F R U R' F R' F' R U' R"],
+  ['Ra','Ra perm',"R U' R' U' R U R D R' U' R D' R' U2 R'"],
+  ['Rb','Rb perm',"R' U2 R U2 R' F R U R' U' R' F' R2"],
+  ['T','T perm',"R U R' U' R' F R2 U' R' U' R U R' F'"],
+  ['V','V perm',"R' U R' U' y R' F' R2 U' R' U R' F R F"],
+  ['Y','Y perm',"F R U' R' U' R U R' F' R U R' U' R' F R F'"]
+];
+const OLL_CASES=[
+  ['21','Double Sune',"R U2 R' U' R U R' U' R U' R'"],
+  ['22','Pi / headlights',"R U2 R2 U' R2 U' R2 U2 R"],
+  ['23','Superman',"R2 D R' U2 R D' R' U2 R'"],
+  ['24','Champ',"L F R' F' L' F R F'"],
+  ['25','Moustache',"F' L F L' U2 L' U L"],
+  ['26','Anti-Sune',"R U2 R' U' R U' R'"],
+  ['27','Sune',"R U R' U R U2 R'"],
+  ['28','Stealth',"M' U M U2 M' U M"],
+  ['29','Awkward',"R U R' U' R U' R' F' U' F R U R'"],
+  ['30','Awkward 2',"F R' F R2 U' R' U' R U R' F2"],
+  ['31','P orientation',"R' U' F U R U' R' F' R"],
+  ['32','P orientation 2',"L U F' U' L' U L F L'"],
+  ['33','T orientation',"R U R' U' R' F R F'"],
+  ['34','C / crown',"R U R2 U' R' F R U R U' F'"],
+  ['35','Fish',"R U2 R2 F R F' R U2 R'"],
+  ['36','W orientation',"L' U' L U' L' U L U L F' L' F"],
+  ['37','Fish 2',"F R' F' R U R U' R'"],
+  ['38','W 2',"R U R' U R U' R' U' R' F R F'"],
+  ['39','Bowtie',"L F' L' U' L U F U' L'"],
+  ['40','Bowtie 2',"R' F R U R' U' F' U R"],
+  ['41','Awkward 3',"R U R' U R U2 R' F R U R' U' F'"],
+  ['42','Awkward 4',"R' U' R U' R' U2 R F R U R' U' F'"],
+  ['43','Anti-P',"F' U' L' U L F"],
+  ['44','P',"F U R U' R' F'"],
+  ['45','T',"F R U R' U' F'"],
+  ['46','C',"R' U' R' F R F' U R"],
+  ['47','Anti-Sune L',"F' L' U' L U F"],
+  ['48','Sune L',"F R U R' U' R F'"],
+  ['49','Right back squeezy',"R B' R2 F R2 B R2 F' R"],
+  ['50','Left back squeezy',"R' F R2 B' R2 F' R2 B R'"],
+  ['51','Gun',"F U R U' R' U R U' R' F'"],
+  ['52','Gun 2',"R U R' U R U' B U' B' R'"],
+  ['53','Anti-Lightning',"l' U' L U' L' U L U' L' U2 l"],
+  ['54','Lightning',"r U R' U R U' R' U R U2 r'"],
+  ['55','I shape',"R U2 R2 U' R U' R' U2 F R F'"],
+  ['56','O shape',"r U r' U R U' R' U R U' R' r U' r'"],
+  ['57','H shape',"R U R' U' M' U R U' r'"],
+  ['1','Runway',"R U2 R2 F R F' U2 R' F R F'"],
+  ['2','Zamboni',"F R U R' U' F' f R U R' U' f'"],
+  ['3','Anti-Nazi',"f R U R' U' f' U' F R U R' U' F'"],
+  ['4','Nazi',"f R U R' U' f' U F R U R' U' F'"],
+  ['5','Left square',"r' U2 R U R' U r"],
+  ['6','Right square',"r U2 R' U' R U' r'"],
+  ['7','Fat sune',"r U R' U R U2 r'"],
+  ['8','Fat anti-sune',"r' U' R U' R' U2 r"],
+  ['9','Kite',"R U R' U' R' F R2 U R' U' F'"],
+  ['10','Downstairs',"R U R' U R' F R F' R U2 R'"],
+  ['11','Lightning bolt',"r' R2 U R' U R U2 R' U M'"],
+  ['12','Lightning 2',"m R2 U' R U' R' U2 R U' R m'"],
+  ['13','Knight',"F U R U2 R' U' R U R' F'"],
+  ['14','Knight 2',"R' F R U R' F' R F U' F'"],
+  ['15','Squeegee',"l' U' l L' U' L U l' U l"],
+  ['16','Squeegee 2',"r U r' R U R' U' r U' r'"],
+  ['17','Squeezy',"F R' F' R2 r' U R U' R' U' M'"],
+  ['18','Crown',"r U R' U R U2 r2 U' R U' R' U2 r"],
+  ['19','Bunny',"r' R U R U R' U' M' R' F R F'"],
+  ['20','X orientation',"r U R' U' M2 U R U' R' U' M'"]
+];
+// CMLL (Roux) — common algs [code, name, alg]
+const CMLL_CASES=[
+  ['O','Oriented / skip',"R U R' U R U2 R'"],
+  ['A1','Adjacent / Sune',"R U R' U R U2 R'"],
+  ['A2','Adjacent / Anti-Sune',"R U2 R' U' R U' R'"],
+  ['H','H / columns',"R U2 R' U' R U R' U' R U' R'"],
+  ['Pi','Pi / Bruno',"R U2 R2 U' R2 U' R2 U2 R"],
+  ['T','T / turtle',"R U R' U' R' F R F'"],
+  ['U','U / headlight',"R2 D R' U2 R D' R' U2 R'"],
+  ['L','L / bowtie',"F R' F' R U R U' R'"],
+  ['S','S / sune-ish',"R U R' U R U' R' U R U2 R'"],
+  ['AS','AS / anti-sune',"R U2 R' U' R U R' U' R U' R'"],
+  ['Nik','Niklas',"R U' L' U R' U' L"],
+  ['Or','Ortega OLL',"R U R' F' R U R' U' R' F R2 U' R'"]
+];
+// 2-look OLL edges / corners for beginner
+const YCROSS_CASES=[
+  ['Dot','Yellow dot',"F R U R' U' F' f R U R' U' f'"],
+  ['L-shape','Yellow L',"F R U R' U' F'"],
+  ['Line','Yellow line',"F R U R' U' R U R' U' F'"]
+];
+const YCORNER_CASES=[
+  ['Sune','Sune',"R U R' U R U2 R'"],
+  ['Anti-Sune','Anti-Sune',"R U2 R' U' R U' R'"],
+  ['H','H corners',"R U R' U R U' R' U R U2 R'"],
+  ['Pi','Pi corners',"R U2 R2 U' R2 U' R2 U2 R"]
+];
+const EPLL_CASES=[
+  ['Ua','Ua',"R2 U' R' U' R U R U R U' R"],
+  ['Ub','Ub',"R' U R' U' R' U' R' U R U R2"],
+  ['H','H',"M2 U M2 U2 M2 U M2"],
+  ['Z','Z',"M2 U M2 U M' U2 M2 U2 M' U2"]
+];
+// 2-look PLL corners (headlights / no headlights)
+const CPLL_CASES=[
+  ['Aa','A perm a',"x R' U R' D2 R U' R' D2 R2 x'"],
+  ['Ab','A perm b',"x R2 D2 R U R' D2 R U' R x'"],
+  ['E','E perm',"x' R U' R' D R U R' D' R U R' D R U' R' D' x"],
+  ['Skip','Corners solved',""]
+];
+
+function invAlg(alg){
+  const toks=alg.replace(/[()]/g,' ').trim().split(/\s+/).filter(Boolean);
+  const inv=[];
+  for(let i=toks.length-1;i>=0;i--){
+    const t=toks[i];
+    if(t.endsWith('2'))inv.push(t);
+    else if(t.endsWith("'"))inv.push(t.slice(0,-1));
+    else inv.push(t+"'");
+  }
+  return inv.join(' ');
+}
+function randAU(){
+  return ['',"U ","U2 ","U' "][Math.random()*4|0];
+}
+function mix(n){return sc([['U','D'],['R','L'],['F','B']],M3,n)}
+let trainCase=null; // {code,name,alg,setup,stage}
+
+function caseFromList(list, stage, prefix){
+  const c=list[Math.random()*list.length|0];
+  const setup=c[2]?randAU()+invAlg(c[2]):mix(8);
+  trainCase={stage,code:(prefix?prefix+' ':'')+c[0],name:c[1],alg:c[2]||'',setup};
+  return setup;
+}
+function drill(stage, code, name, n){
+  const s=mix(n);
+  trainCase={stage,code,name,alg:'',setup:s};
+  return s;
+}
+
+function genTrainScramble(mode){
+  switch(mode){
+    // CFOP
+    case 'cross': return drill('cross','Cross','Solve white cross on D',12);
+    case 'f2l': return drill('f2l','F2L','Cross done · finish all F2L pairs',14);
+    case 'oll': return caseFromList(OLL_CASES,'oll','OLL');
+    case 'pll': return caseFromList(PLL_CASES,'pll','');
+    // Roux
+    case 'fb': return drill('fb','First Block','Build 1×2×3 on left (centers + RL)',10);
+    case 'sb': return drill('sb','Second Block','FB done · build opposite 1×2×3',12);
+    case 'cmll': return caseFromList(CMLL_CASES,'cmll','CMLL');
+    case 'lse': return drill('lse','LSE','CMLL done · orient & permute UL/UR + M',8);
+    // ZZ
+    case 'eoline': return drill('eoline','EOLine','Orient all edges + DF/DB line',12);
+    case 'zzf2l': return drill('zzf2l','ZZ F2L','EOLine done · blockbuild F2L (no rotations)',14);
+    // Petrus
+    case '222': return drill('222','2×2×2','Build a 2×2×2 block',8);
+    case '223': return drill('223','2×2×3','Extend to 2×2×3',10);
+    case 'eo': return drill('eo','Edge Control','Orient remaining bad edges',10);
+    case 'pf2l': return drill('pf2l','Petrus F2L','Finish two F2L pairs',12);
+    // Beginner
+    case 'wcross': return drill('wcross','White cross','Daisy/cross on white',10);
+    case 'wcorners': return drill('wcorners','White corners','Insert white corners (R U R\' U\')',10);
+    case 'medges': return drill('medges','Middle edges','Insert E-slice edges',12);
+    case 'ycross': return caseFromList(YCROSS_CASES,'ycross','');
+    case 'ycorners': return caseFromList(YCORNER_CASES,'ycorners','');
+    case 'epll': return caseFromList(EPLL_CASES,'epll','');
+    // Beginner CFOP (2-look)
+    case 'bcross': return drill('bcross','Cross','White cross on bottom — match edge colors to center',10);
+    case 'bf2l': return drill('bf2l','F2L','Cross done · solve 4 corner+edge pairs (or layer-by-layer)',12);
+    case 'boll-e': return caseFromList(YCROSS_CASES,'boll-e','OLL edges');
+    case 'boll-c': return caseFromList(YCORNER_CASES,'boll-c','OLL corners');
+    case 'bpll-c': {
+      // prefer non-skip
+      const list=CPLL_CASES.filter(c=>c[2]);
+      return caseFromList(list,'bpll-c','PLL corners');
+    }
+    case 'bpll-e': return caseFromList(EPLL_CASES,'bpll-e','PLL edges');
+    default: return null;
+  }
+}
+
+function methodOfMode(mode){
+  if(!mode||mode==='timer')return 'timer';
+  for(const [m,stages] of Object.entries(STAGES)){
+    if(stages.some(([k])=>k===mode))return m;
+  }
+  return 'timer';
+}
+
+function updateStageRow(){
+  const row=$('#stageRow');
+  if(!row)return;
+  const method=S.set.method||'timer';
+  const stages=STAGES[method]||[];
+  const mode=S.set.mode||'timer';
+  row.innerHTML=stages.map(([k,l])=>{
+    const on=k===mode?' active':'';
+    return `<button type="button" class="cfop-btn${on}" data-mode="${k}">${l}</button>`;
+  }).join('');
+  document.querySelectorAll('#methodRow .cfop-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.method===method);
+  });
+}
+
+function updateCaseBar(){
+  const bar=$('#casebar');
+  if(!bar)return;
+  updateStageRow();
+  const mode=S.set.mode||'timer';
+  if(mode==='timer'||!trainCase){
+    bar.classList.remove('on');
+    bar.innerHTML='';
+    return;
+  }
+  bar.classList.add('on');
+  const show=S.set.showAlg;
+  let h=`<b>${esc(trainCase.code)}</b>`;
+  if(trainCase.name)h+=` · ${esc(trainCase.name)}`;
+  if(trainCase.alg){
+    h+=show?`<div class="alg">${esc(trainCase.alg)}</div>`:`<div style="margin-top:6px"><button type="button" id="showAlgBtn">Show algorithm</button></div>`;
+  }
+  bar.innerHTML=h;
+  const b=$('#showAlgBtn');
+  if(b)b.onclick=()=>{S.set.showAlg=true;save();updateCaseBar()};
+}
+
+function setMethod(method){
+  S.set.method=method;
+  const stages=STAGES[method]||[];
+  S.set.mode=stages.length?stages[0][0]:'timer';
+  S.set.showAlg=false;
+  save();scrs=[];newScr();render();
+}
+function setMode(mode){
+  S.set.mode=mode;
+  S.set.method=methodOfMode(mode);
+  S.set.showAlg=false;
+  save();scrs=[];newScr();render();
+}
+
+async function genWcaScramble(eventKey){
+  try{
+    await new Promise(r=>setTimeout(r,0));
+    const mode=S.set.mode||'timer';
+    S.set.showAlg=false;
+    if(mode&&mode!=='timer'){
+      const t=genTrainScramble(mode);
+      if(t!=null)return t;
+    }
+    trainCase=null;
+    if(eventKey==='222')return RS222.scramble();
+    return (FALLBACK[eventKey]||FALLBACK['333'])();
+  }catch(e){
+    console.warn('scramble failed',e);
+    return scramble333RS();
+  }
+}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+S=S||{sessions:[{id:1,name:'Session 1',event:'333',solves:[]}],cur:1,set:{}};
+S.set=Object.assign({insp:false,hide:false,ms:false,snd:true,man:false,img:true,theme:'auto',font:'default',size:'normal',method:'timer',mode:'timer',showAlg:false},S.set);
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const ss=()=>S.sessions.find(x=>x.id===S.cur)||S.sessions[0];
+const E=s=>s.pen<0?Infinity:s.t+s.pen;
+function fmt(ms){
+  if(ms===Infinity)return'DNF';
+  const d=S.set.ms?3:2,k=d===3?1:10,u=1000/k;
+  let v=Math.floor(ms/k);const f=String(v%u).padStart(d,'0');v=Math.floor(v/u);
+  const s=v%60,m=Math.floor(v/60);
+  return(m?m+':'+String(s).padStart(2,'0'):s)+'.'+f;
+}
+const fs=s=>s.pen<0?'DNF':fmt(s.t+s.pen)+(s.pen?'+':'');
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+function aoW(w,n){
+  const d=w.filter(x=>x===Infinity).length;
+  if(n===3)return d?Infinity:mean(w);
+  const t=Math.ceil(n*.05);
+  if(d>t)return Infinity;
+  return mean([...w].sort((a,b)=>a-b).slice(t,n-t));
+}
+const ao=(v,n)=>v.length<n?null:aoW(v.slice(-n),n);
+function bestAo(v,n){
+  let b=null;
+  if(n===1){v.forEach(x=>{if(b===null||x<b)b=x});return b}
+  for(let i=n;i<=v.length;i++){const a=aoW(v.slice(i-n,i),n);if(b===null||a<b)b=a}
+  return b;
+}
+
+/* scrambles */
+let scrs=[],si=0,scrGenId=0,generating=false;
+async function newScr(){
+  const id=++scrGenId;
+  const eventKey=ss().event;
+  generating=true;
+  const e=$('#scr');
+  e.textContent='Generating…';
+  e.classList.remove('long');
+  updateScrambleImage('');
+  const text=await genWcaScramble(eventKey);
+  if(id!==scrGenId)return; // superseded by a newer request
+  generating=false;
+  scrs.push(text);
+  if(scrs.length>80)scrs.shift();
+  si=scrs.length-1;
+  showScr();
+}
+function showScr(){
+  const e=$('#scr');
+  if(generating&&!scrs[si]){
+    e.textContent='Generating…';
+    e.classList.remove('long');
+    updateScrambleImage('');
+    updateCaseBar();
+    return;
+  }
+  const text=scrs[si]||'';
+  e.textContent=text||'Generating…';
+  e.classList.toggle('long',(text||'').length>90);
+  updateScrambleImage(text);
+  updateCaseBar();
+}
+
+/* Offline 2D scramble net (no CDN required) */
+const FACE_COLORS={U:'#ffffff',R:'#ff5826',F:'#1bb050',D:'#ffd500',L:'#ff6b00',B:'#0b6bdb'};
+// standard sticker color by face letter for solved cube
+function solvedFacelets(n){
+  const faces='URFDLB', out={};
+  for(const f of faces){
+    out[f]=Array(n*n).fill(f);
+  }
+  return out;
+}
+function faceRot(face,n,cw){
+  const a=face.slice(), b=Array(n*n);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    const i=r*n+c;
+    const j=cw?(c*n+(n-1-r)):((n-1-c)*n+r);
+    b[j]=a[i];
+  }
+  return b;
+}
+function cycleSides(faces,order,n,cw,layers){
+  // order = [face, side indices extractor] — simplified for outer layers only
+  // We'll use fixed cycles for standard faces
+}
+// Move application for odd/even cubes focusing on outer turns (good enough for display)
+const ADJ={
+  // face -> [U-edge order of sides when looking at face]: cycles of side faces for CW
+  U:[['F',0],['R',0],['B',0],['L',0]], // top rows
+  D:[['F',2],['L',2],['B',2],['R',2]],
+  R:[['U',1],['F',1],['D',1],['B',3]],
+  L:[['U',3],['B',1],['D',3],['F',3]],
+  F:[['U',2],['R',3],['D',0],['L',1]],
+  B:[['U',0],['L',3],['D',2],['R',1]]
+};
+function getStrip(face,side,n){
+  // side 0=top row, 1=right col, 2=bottom row, 3=left col
+  const s=[];
+  if(side===0){for(let c=0;c<n;c++)s.push(face[c])}
+  else if(side===1){for(let r=0;r<n;r++)s.push(face[r*n+(n-1)])}
+  else if(side===2){for(let c=n-1;c>=0;c--)s.push(face[(n-1)*n+c])}
+  else {for(let r=n-1;r>=0;r--)s.push(face[r*n])}
+  return s;
+}
+function setStrip(face,side,n,vals){
+  let i=0;
+  if(side===0){for(let c=0;c<n;c++)face[c]=vals[i++]}
+  else if(side===1){for(let r=0;r<n;r++)face[r*n+(n-1)]=vals[i++]}
+  else if(side===2){for(let c=n-1;c>=0;c--)face[(n-1)*n+c]=vals[i++]}
+  else {for(let r=n-1;r>=0;r--)face[r*n]=vals[i++]}
+}
+function applyMove(state,n,face,pow){
+  // pow: 1=CW, 2=180, 3=CCW
+  for(let t=0;t<pow;t++){
+    state[face]=faceRot(state[face],n,true);
+    const cyc=ADJ[face];
+    const strips=cyc.map(([f,s])=>getStrip(state[f],s,n));
+    for(let i=0;i<4;i++){
+      const [f,s]=cyc[i];
+      setStrip(state[f],s,n,strips[(i+3)%4]);
+    }
+  }
+}
+function parseMoves(scr){
+  // basic SiGN-like tokens: R, R', R2, Rw, 3Rw', etc. Outer-layer focus for display
+  const toks=scr.replace(/[()]/g,' ').trim().split(/\s+/).filter(Boolean);
+  const out=[];
+  for(const t of toks){
+    const m=t.match(/^(\d*)([URFDLB])(w?)([2']?)$/i);
+    if(!m)continue;
+    const face=m[2].toUpperCase();
+    const wide=!!m[3];
+    // ignore wide/inner for simple net (still rotate outer face for visual)
+    let pow=1;
+    if(m[4]==="2")pow=2;
+    else if(m[4]==="'")pow=3;
+    out.push([face,pow]);
+  }
+  return out;
+}
+function scrambleState(n,scr){
+  const st=solvedFacelets(n);
+  for(const [face,pow] of parseMoves(scr)){
+    if(st[face])applyMove(st,n,face,pow);
+  }
+  return st;
+}
+function eventSize(ev){
+  if(ev==='222')return 2;
+  if(ev==='444')return 4;
+  if(ev==='555')return 5;
+  if(ev==='666')return 6;
+  if(ev==='777')return 7;
+  return 3; // 333 / oh / bld / others approximate
+}
+function drawNet(canvas,state,n){
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const gap=1;
+  const cell=Math.floor(Math.min((W-4)/(4*n),(H-4)/(3*n)));
+  if(cell<2)return;
+  const netW=4*n*cell, netH=3*n*cell;
+  const ox=Math.floor((W-netW)/2), oy=Math.floor((H-netH)/2);
+  // layout:  . U .
+  //        L F R B
+  //          D
+  const pos={
+    U:[n,0], R:[2*n,n], F:[n,n], D:[n,2*n], L:[0,n], B:[3*n,n]
+  };
+  for(const f of 'URFDLB'){
+    const [px,py]=pos[f];
+    const stickers=state[f];
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+      const col=FACE_COLORS[stickers[r*n+c]]||'#888';
+      const x=ox+(px+c)*cell, y=oy+(py+r)*cell;
+      ctx.fillStyle=col;
+      ctx.fillRect(x+gap,y+gap,cell-gap*2,cell-gap*2);
+      ctx.strokeStyle='rgba(0,0,0,.25)';
+      ctx.lineWidth=1;
+      ctx.strokeRect(x+gap,y+gap,cell-gap*2,cell-gap*2);
+    }
+  }
+}
+function updateScrambleImage(scramble){
+  const box=$('#simg');
+  if(!box)return;
+  if(!S.set.img||!scramble){
+    box.innerHTML='';
+    box.hidden=true;
+    return;
+  }
+  box.hidden=false;
+  const ev=EV_MAP[ss().event]||'333';
+  // Only draw cube nets for cube-like events (not clock/sq1/pyra/minx reliably)
+  if(['clock','sq1','pyram','minx','skewb'].includes(ev)){
+    box.innerHTML='<div class="img-fallback" style="font-size:11px;color:var(--mute);padding:6px;text-align:center">Net preview N/A for this event</div>';
+    return;
+  }
+  let canvas=box.querySelector('canvas.scrnet');
+  if(!canvas){
+    box.innerHTML='';
+    canvas=document.createElement('canvas');
+    canvas.className='scrnet';
+    canvas.width=280; canvas.height=210;
+    canvas.style.width='min(260px,85vw)';
+    canvas.style.height='auto';
+    canvas.style.display='block';
+    canvas.style.margin='0 auto';
+    box.appendChild(canvas);
+  }
+  const n=eventSize(ev);
+  try{
+    const st=scrambleState(n,scramble);
+    drawNet(canvas,st,n);
+  }catch(err){
+    console.warn('net draw failed',err);
+    box.innerHTML='<div class="img-fallback" style="font-size:11px;color:var(--mute);padding:6px;text-align:center">Could not draw scramble</div>';
+  }
+}
+
+
+/* timer */
+const pad=$('#pad'),T=$('#time'),SUB=$('#sub');
+let st='idle',holding=false,armed=false,ht,t0=0,i0=0,raf=0,pen=0,b8=0,b12=0,ac;
+function beep(f,d){
+  if(!S.set.snd)return;
+  try{
+    ac=ac||new(window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.frequency.value=f;g.gain.value=.08;
+    o.connect(g);g.connect(ac.destination);
+    o.start();o.stop(ac.currentTime+d);
+  }catch(e){}
+}
+function setS(s,sub){pad.dataset.s=s;if(sub!==undefined)SUB.textContent=sub}
+const hint=()=>S.set.man?'Type your time below':S.set.insp?'Press and release to start inspection':'Hold space or the pad until it turns green, then release';
+function tick(){
+  if(st==='run'){T.textContent=S.set.hide?'…':fmt(performance.now()-t0)}
+  else if(st==='insp'){
+    const el=(performance.now()-i0)/1000;
+    if(el>=8&&!b8){b8=1;beep(660,.15)}
+    if(el>=12&&!b12){b12=1;beep(880,.3)}
+    if(!holding||!armed)T.textContent=el<15?Math.ceil(15-el):el<17?'+2':'DNF';
+  }else return;
+  raf=requestAnimationFrame(tick);
+}
+function down(){
+  if(st==='run'){stop();return}
+  if(S.set.man||(st!=='idle'&&st!=='insp'))return;
+  holding=true;armed=false;
+  if(st==='idle'&&S.set.insp)return setS('hold');
+  setS('hold');
+  clearTimeout(ht);
+  ht=setTimeout(()=>{if(holding){armed=true;setS('ready')}},300);
+}
+function up(){
+  if(!holding)return;
+  holding=false;clearTimeout(ht);
+  if(st==='idle'&&S.set.insp){
+    st='insp';i0=performance.now();b8=b12=0;
+    setS('insp','Hold, then release to start solving');
+    document.body.classList.add('running');
+    tick();
+  }else if(armed)start();
+  else setS(st==='insp'?'insp':'idle');
+}
+function start(){
+  cancelAnimationFrame(raf);pen=0;
+  if(st==='insp'){
+    const el=(performance.now()-i0)/1000;
+    pen=el>17?-1:el>15?2000:0;
+  }
+  st='run';t0=performance.now();
+  document.body.classList.add('running');
+  setS('run','');
+  tick();
+}
+function stop(){
+  cancelAnimationFrame(raf);
+  const t=Math.floor(performance.now()-t0);
+  st='idle';
+  document.body.classList.remove('running');
+  setS('idle',hint());
+  add(t,pen,scrs[si]);
+}
+function add(t,p,scr){
+  const s=ss(),v=s.solves.map(E),pb=bestAo(v,1),pa=bestAo(v,5);
+  s.solves.push({t,pen:p,scr,ts:Date.now(),note:''});
+  const v2=s.solves.map(E),n=v2.length-1;
+  let msg='';
+  if(p>=0&&v.length&&v2[n]<pb)msg='New best single';
+  const a5=ao(v2,5);
+  if(a5!==null&&pa!==null&&a5<pa&&isFinite(a5))msg=msg?'New best single and ao5':'New best ao5';
+  save();newScr();render();
+  if(msg)toast(msg);
+}
+function toast(m){
+  const e=$('#toast');
+  e.textContent=m;e.classList.add('show');
+  clearTimeout(toast.t);
+  toast.t=setTimeout(()=>e.classList.remove('show'),2600);
+}
+
+/* input */
+const typing=e=>/^(INPUT|TEXTAREA)$/.test(e.target.tagName)||$('#dg').open;
+addEventListener('keydown',e=>{
+  if(typing(e)){if(e.target.id==='man'&&e.key==='Enter')manual();return}
+  if(e.key==='Escape'){
+    if(st==='insp'){st='idle';cancelAnimationFrame(raf);holding=false;setS('idle',hint());render()}
+    else if($('#dg').open)$('#dg').close();
+    return;
+  }
+  if(st==='run'&&!['Shift','Control','Alt','Meta'].includes(e.key)){e.preventDefault();stop();return}
+  if(e.code==='Space'){e.preventDefault();if(!e.repeat)down()}
+  if(e.key==='?'||(e.shiftKey&&e.key==='/')){e.preventDefault();openHelp()}
+});
+addEventListener('keyup',e=>{if(e.code==='Space'&&!typing(e)){e.preventDefault();up()}});
+addEventListener('pointerdown',e=>{
+  if(st==='run'){e.preventDefault();stop()}
+  else if(pad.contains(e.target)&&e.target.id!=='man')down();
+});
+addEventListener('pointerup',up);
+addEventListener('pointercancel',up);
+function parseT(x){
+  x=x.trim().toLowerCase();
+  if(x==='dnf')return -1;
+  const m=x.match(/^(?:(\d+):)?(\d+(?:\.\d+)?)$/);
+  return m?Math.round(((+m[1]||0)*60+ +m[2])*1000):null;
+}
+function manual(){
+  const i=$('#man'),v=parseT(i.value);
+  if(v===null)return toast('Enter a time like 12.34 or 1:02.5');
+  i.value='';
+  v<0?add(0,-1,scrs[si]):add(v,0,scrs[si]);
+}
+
+
+/* appearance */
+const THEMES=[
+  ['auto','Auto'],['light','Light'],['dark','Dark'],['midnight','Midnight'],
+  ['forest','Forest'],['sunset','Sunset'],['ocean','Ocean'],['mono','Mono'],
+  ['terminal','Terminal'],['rose','Rose'],['slate','Slate']
+];
+const FONTS=[
+  ['default',"Default", "'Bricolage Grotesque',system-ui,sans-serif", "'Chivo Mono',ui-monospace,monospace"],
+  ['inter',"Inter + JetBrains", "'Inter',system-ui,sans-serif", "'JetBrains Mono',ui-monospace,monospace"],
+  ['space',"Space Grotesk + IBM", "'Space Grotesk',system-ui,sans-serif", "'IBM Plex Mono',ui-monospace,monospace"],
+  ['outfit',"Outfit + Roboto Mono", "'Outfit',system-ui,sans-serif", "'Roboto Mono',ui-monospace,monospace"],
+  ['plex',"IBM Plex", "'IBM Plex Sans',system-ui,sans-serif", "'IBM Plex Mono',ui-monospace,monospace"],
+  ['system',"System", "system-ui,-apple-system,sans-serif", "ui-monospace,SFMono-Regular,Menlo,monospace"]
+];
+const SIZES=[['compact','Compact'],['normal','Normal'],['large','Large'],['huge','Huge']];
+function applyAppearance(){
+  const root=document.documentElement;
+  const th=S.set.theme||'auto';
+  if(th==='auto')root.removeAttribute('data-theme');
+  else root.dataset.theme=th;
+  const sz=S.set.size||'normal';
+  root.dataset.size=sz;
+  const f=FONTS.find(x=>x[0]===(S.set.font||'default'))||FONTS[0];
+  root.style.setProperty('--font-ui',f[2]);
+  root.style.setProperty('--font-mono',f[3]);
+  const ts=$('#themeSel'),fs=$('#fontSel'),ss=$('#sizeSel');
+  if(ts){ts.innerHTML=THEMES.map(([k,l])=>`<option value="${k}"${k===th?' selected':''}>${l}</option>`).join('')}
+  if(fs){fs.innerHTML=FONTS.map(([k,l])=>`<option value="${k}"${k===(S.set.font||'default')?' selected':''}>${l}</option>`).join('')}
+  if(ss){ss.innerHTML=SIZES.map(([k,l])=>`<option value="${k}"${k===sz?' selected':''}>${l}</option>`).join('')}
+  const tb=$('#theme');
+  if(tb)tb.textContent='Theme: '+(THEMES.find(x=>x[0]===th)||['','?'])[1];
+}
+
+/* render */
+function render(){
+  const s=ss(),v=s.solves.map(E);
+  $('#sess').innerHTML=S.sessions.map(x=>`<option value="${x.id}"${x.id===s.id?' selected':''}>${esc(x.name)} (${x.solves.length})</option>`).join('');
+  $('#ev').innerHTML=Object.entries(EV).map(([k,e])=>`<option value="${k}"${k===s.event?' selected':''}>${e[0]}</option>`).join('');
+  const mode=S.set.mode||'timer';
+  const ms=$('#mode');
+  if(ms)ms.innerHTML=MODES.map(([k,l])=>`<option value="${k}"${k===mode?' selected':''}>${l}</option>`).join('');
+  document.body.classList.toggle('cfop',(S.set.method||'timer')!=='timer');
+  for(const k of['insp','hide','ms','snd'])$('#'+k).checked=S.set[k];
+  $('#mn').checked=S.set.man;
+  $('#img').checked=S.set.img;
+  document.body.classList.toggle('manual',S.set.man);
+  applyAppearance();
+  const f=x=>x===null?'–':fmt(x),ok=v.filter(isFinite);
+  const row=(n,c,b)=>`<span>${n}</span><b>${f(c)}</b><b>${f(b)}</b>`;
+  $('#stats').innerHTML=`<span></span><span class="h">current</span><span class="h">best</span>`+
+    row('Single',v.length?v[v.length-1]:null,bestAo(v,1))+
+    row('Mean of 3',ao(v,3),bestAo(v,3))+
+    row('Average of 5',ao(v,5),bestAo(v,5))+
+    row('Average of 12',ao(v,12),bestAo(v,12))+
+    row('Average of 50',ao(v,50),bestAo(v,50))+
+    row('Average of 100',ao(v,100),bestAo(v,100))+
+    `<span>Session mean</span><b>${ok.length?f(mean(ok)):'–'}</b><b></b>`+
+    `<span>Solves</span><b>${v.length}</b><b></b>`;
+  const L=$('#list');
+  if(!v.length)L.innerHTML='<div class="empty">No solves yet. Hold space and release to start.</div>';
+  else{
+    const pb=bestAo(v,1);
+    let h='';
+    for(let i=v.length-1;i>=Math.max(0,v.length-300);i--){
+      const w=v.slice(0,i+1),a5=ao(w,5),a12=ao(w,12);
+      const isPb=isFinite(v[i])&&v[i]===pb;
+      h+=`<button class="row${isPb?' pb':''}" data-i="${i}"><span>${i+1}</span><b>${fs(s.solves[i])}</b><span>${a5===null?'':fmt(a5)}</span><span>${a12===null?'':fmt(a12)}</span></button>`;
+    }
+    L.innerHTML='<div class="row" style="padding-bottom:2px"><span>#</span><span>time</span><span>ao5</span><span>ao12</span></div>'+h;
+  }
+  const last=s.solves[s.solves.length-1];
+  $('#quick').innerHTML=last
+    ?`Last solve ${fs(last)}${last.note?' · '+esc(last.note):''} <button data-q="p2">+2</button><button data-q="dnf">DNF</button><button data-q="del">Delete</button><button data-q="note">Note</button>`
+    :'';
+  if(st==='idle'){T.textContent=last?fs(last):fmt(0);SUB.textContent=hint()}
+  // Keep scramble image in sync with current settings
+  showScr();
+  draw();
+}
+const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function draw(){
+  const c=$('#cv'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;
+  if(!r.width)return;
+  c.width=r.width*d;c.height=r.height*d;
+  const g=c.getContext('2d');g.scale(d,d);
+  const W=r.width,H=r.height,v=ss().solves.map(E),fin=v.filter(isFinite),css=getComputedStyle(document.documentElement),col=n=>css.getPropertyValue(n).trim();
+  g.font='13px system-ui,sans-serif';
+  if(v.length<2||!fin.length){
+    g.fillStyle=col('--mute');g.textAlign='center';
+    g.fillText('Your graph appears after two solves',W/2,H/2);
+    return;
+  }
+  const lo=Math.min(...fin),hi=Math.max(...fin);
+  const X=i=>12+i*(W-24)/(v.length-1),Y=x=>H-16-(x-lo)/((hi-lo)||1)*(H-40);
+  g.fillStyle=col('--mute');
+  v.forEach((x,i)=>{if(isFinite(x)){g.beginPath();g.arc(X(i),Y(x),2.5,0,7);g.fill()}});
+  [[5,'--blu'],[12,'--org']].forEach(([n,cl])=>{
+    g.strokeStyle=col(cl);g.lineWidth=2;g.beginPath();let on=0;
+    for(let i=n;i<=v.length;i++){
+      const a=aoW(v.slice(i-n,i),n);
+      if(!isFinite(a)){on=0;continue}
+      on?g.lineTo(X(i-1),Y(a)):g.moveTo(X(i-1),Y(a));on=1;
+    }
+    g.stroke();
+  });
+  g.textAlign='left';g.fillStyle=col('--blu');g.fillText('ao5',12,12);
+  g.fillStyle=col('--org');g.fillText('ao12',42,12);
+  g.fillStyle=col('--mute');g.textAlign='right';
+  g.fillText(fmt(hi)+' / '+fmt(lo),W-12,12);
+}
+addEventListener('resize',draw);
+
+/* dialogs */
+const dg=$('#dg');
+function show(h){dg.innerHTML=h;if(!dg.open)dg.showModal()}
+const sure=b=>{if(b.dataset.a!=='1'){b.dataset.a='1';b.textContent='Click again to confirm';return false}return true};
+function openSolve(i){
+  const s=ss().solves[i];
+  dg.dataset.i=i;
+  show(`<h3>${fs(s)}</h3>
+  <p>Solve ${i+1}, ${new Date(s.ts).toLocaleString()}${s.pen>0?' (+2 added)':''}</p>
+  <div class="s">${esc(s.scr||'')}</div>
+  ${s.note?`<p style="margin-top:8px">Note: <b style="color:var(--ink)">${esc(s.note)}</b></p>`:''}
+  <div class="btns">
+    <button data-a="p2">+2</button>
+    <button data-a="dnf">DNF</button>
+    <button data-a="del">Delete</button>
+    <button data-a="note">Note</button>
+    <button data-a="copy">Copy scramble</button>
+    <button data-a="close">Close</button>
+  </div>`);
+}
+function openNote(i){
+  const s=ss().solves[i];
+  dg.dataset.i=i;
+  show(`<h3 style="font-size:24px">Add note</h3>
+  <p>Optional comment for this solve (e.g. parity, PLL skip, lockup).</p>
+  <input type="text" id="nt" placeholder="Note" value="${esc(s.note||'')}" maxlength="80">
+  <div class="btns"><button data-a="saven">Save</button><button data-a="close">Cancel</button></div>`);
+  setTimeout(()=>$('#nt')?.focus(),50);
+}
+function openData(){
+  const s=ss();
+  show(`<h3 style="font-size:24px">Import / export</h3>
+  <p>Export copies this session as JSON. To import, paste JSON or a list of times (one per line), then choose Import.</p>
+  <textarea id="tx" spellcheck="false">${esc(JSON.stringify({name:s.name,event:s.event,solves:s.solves},null,0))}</textarea>
+  <div class="btns">
+    <button data-a="exp">Copy JSON</button>
+    <button data-a="plain">Copy times</button>
+    <button data-a="imp">Import</button>
+    <button data-a="ren">Rename session</button>
+    <button data-a="clr">Clear session</button>
+    <button data-a="dels">Delete session</button>
+    <button data-a="close">Close</button>
+  </div>`);
+}
+function openNew(){
+  show(`<h3 style="font-size:24px">New session</h3>
+  <p>Each session keeps its own solves and event.</p>
+  <input type="text" id="nn" placeholder="Name" value="Session ${S.sessions.length+1}">
+  <select id="ne" style="width:100%;margin-bottom:10px">${Object.entries(EV).map(([k,e])=>`<option value="${k}"${k===ss().event?' selected':''}>${e[0]}</option>`).join('')}</select>
+  <div class="btns"><button data-a="mk">Create session</button><button data-a="close">Cancel</button></div>`);
+  setTimeout(()=>$('#nn')?.focus(),50);
+}
+function openHelp(){
+  show(`<h3 style="font-size:24px">Controls</h3>
+  <ul class="help-list">
+    <li><b>Space</b> or hold the pad → start / stop</li>
+    <li>Hold ~0.3s until green, then release to start</li>
+    <li><b>Any key</b> while running → stop</li>
+    <li><b>Esc</b> during inspection → cancel</li>
+    <li><b>?</b> → this help</li>
+    <li>Click a time in the list for details / +2 / DNF / note</li>
+    <li>Toggle <b>Scramble image</b> to show a 2D net of the scramble</li>
+    <li>Scrambles use <b>WCA random-state</b> generation (cubing.js) when online</li>
+    <li><b>BT</b> prefers <b>gan-web-bluetooth</b> (GAN Gen2/3/4: i3, i Carry, 12 ui, etc.), then cubing.js for other brands</li>
+    <li>First cube turn starts the timer; space still stops; GAN facelets can auto-stop when solved</li>
+    <li>Bluetooth needs <b>Chrome/Edge</b> and <b>HTTPS</b> (or localhost)</li>
+    <li>Inspection follows WCA: 15 s free, 15–17 s = +2, &gt;17 s = DNF</li>
+  </ul>
+  <div class="btns"><button data-a="close">Close</button></div>`);
+}
+function copy(t){
+  try{navigator.clipboard.writeText(t).then(()=>toast('Copied'),()=>toast('Select the text and copy it manually'))}
+  catch(e){toast('Select the text and copy it manually')}
+}
+dg.addEventListener('click',e=>{
+  const b=e.target.closest('button');
+  if(e.target===dg){dg.close();return}
+  if(!b)return;
+  const a=b.dataset.a,s=ss(),i=+dg.dataset.i,x=s.solves[i];
+  if(a==='close')dg.close();
+  else if(a==='p2'){x.pen=x.pen===2000?0:2000;save();render();openSolve(i)}
+  else if(a==='dnf'){x.pen=x.pen<0?0:-1;save();render();openSolve(i)}
+  else if(a==='del'){s.solves.splice(i,1);save();render();dg.close()}
+  else if(a==='copy')copy(x.scr||'');
+  else if(a==='note')openNote(i);
+  else if(a==='saven'){x.note=($('#nt')?.value||'').trim();save();render();dg.close();toast('Note saved')}
+  else if(a==='exp')copy($('#tx').value);
+  else if(a==='plain'){
+    const plain=s.solves.map((x,i)=>`${i+1}. ${fs(x)}${x.note?' // '+x.note:''}`).join('\n');
+    copy(plain);
+  }
+  else if(a==='imp'){
+    const t=$('#tx').value.trim();let add=[];
+    try{
+      let j=JSON.parse(t);
+      j=Array.isArray(j)?j:j.solves||[];
+      add=j.map(y=>typeof y==='number'
+        ?{t:Math.round(y*1000),pen:0,scr:'',ts:Date.now(),note:''}
+        :{t:+y.t||0,pen:+y.pen||0,scr:y.scr||'',ts:y.ts||Date.now(),note:y.note||''});
+    }catch(er){
+      add=t.split(/[\s,;]+/).map(parseT).filter(v=>v!==null)
+        .map(v=>v<0?{t:0,pen:-1,scr:'',ts:Date.now(),note:''}:{t:v,pen:0,scr:'',ts:Date.now(),note:''});
+    }
+    if(!add.length)return toast('Nothing to import');
+    s.solves.push(...add);save();render();dg.close();toast('Imported '+add.length+' solves');
+  }
+  else if(a==='ren'){
+    const name=prompt('Session name',s.name);
+    if(name!==null&&name.trim()){s.name=name.trim();save();render();toast('Renamed')}
+  }
+  else if(a==='clr'){if(sure(b)){s.solves=[];save();render();dg.close()}}
+  else if(a==='dels'){
+    if(sure(b)){
+      if(S.sessions.length>1){S.sessions=S.sessions.filter(y=>y!==s);S.cur=S.sessions[0].id}
+      else s.solves=[];
+      save();scrs=[];newScr();render();dg.close();
+    }
+  }
+  else if(a==='mk'){
+    const id=Date.now();
+    S.sessions.push({id,name:$('#nn').value.trim()||'Session',event:$('#ne').value,solves:[]});
+    S.cur=id;save();scrs=[];newScr();render();dg.close();
+  }
+});
+dg.addEventListener('close',()=>pad.focus());
+
+/* Bluetooth — GAN (gan-web-bluetooth) + cubing.js fallback */
+let btConn=null,btKind=null,btSub=null,btMoveCount=0,btBusy=false;
+const SOLVED_FACELETS='UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+function setBtUi(connected,name){
+  const b=$('#bt');
+  if(!b)return;
+  if(connected){
+    b.textContent='BT ✓';
+    b.title=name?`Connected: ${name} (click to disconnect)`:'Connected (click to disconnect)';
+    b.style.borderColor='var(--grn)';
+  }else{
+    b.textContent='BT';
+    b.title='Connect smart cube (Chrome/Edge + HTTPS/localhost)';
+    b.style.borderColor='';
+  }
+}
+function btStartFromMove(){
+  if(st==='idle'&&!S.set.man){
+    pen=0;
+    st='run';t0=performance.now();
+    document.body.classList.add('running');
+    setS('run','');
+    tick();
+    btMoveCount=1;
+  }else if(st==='insp'){
+    const el=(performance.now()-i0)/1000;
+    pen=el>17?-1:el>15?2000:0;
+    st='run';t0=performance.now();
+    document.body.classList.add('running');
+    setS('run','');
+    tick();
+    btMoveCount=1;
+  }else if(st==='run'){
+    btMoveCount++;
+  }
+}
+function onGanEvent(ev){
+  if(!ev)return;
+  if(ev.type==='MOVE')btStartFromMove();
+  else if(ev.type==='FACELETS'&&st==='run'&&ev.facelets&&ev.facelets===SOLVED_FACELETS)stop();
+  else if(ev.type==='DISCONNECT'){
+    btConn=null;btKind=null;btSub=null;
+    setBtUi(false);toast('Cube disconnected');
+  }
+}
+function onCubingMove(e){
+  btStartFromMove();
+  try{
+    const pat=e&&e.pattern;
+    if(st==='run'&&pat&&pat.toString&&/solved|identity/i.test(String(pat)))stop();
+  }catch(_){}
+}
+async function disconnectBt(){
+  try{if(btSub&&typeof btSub.unsubscribe==='function')btSub.unsubscribe()}catch(_){}
+  try{
+    if(btConn){
+      if(btKind==='gan'&&btConn.disconnect)await btConn.disconnect();
+      else if(btKind==='cubing'&&btConn.disconnect)btConn.disconnect();
+    }
+  }catch(_){}
+  btConn=null;btKind=null;btSub=null;
+  setBtUi(false);
+}
+/* GAN needs MAC for AES keys; prompt if browser cannot auto-read ads */
+async function ganMacProvider(device,isFallback){
+  if(!isFallback)return null;
+  const key='cubetimer.ganMac.'+(device&&device.id||'');
+  let saved='';
+  try{saved=localStorage.getItem(key)||''}catch(_){}
+  const mac=prompt(
+    'Enter this GAN cube MAC address (from CubeStation or the box), like AA:BB:CC:DD:EE:FF\\n\\nNeeded once for encryption.',
+    saved
+  );
+  if(!mac)return null;
+  const clean=mac.trim().toUpperCase().replace(/-/g,':');
+  if(!/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(clean)){
+    toast('Invalid MAC format');
+    return null;
+  }
+  try{localStorage.setItem(key,clean)}catch(_){}
+  return clean;
+}
+async function loadGanConnect(){
+  const urls=[
+    'https://esm.sh/gan-web-bluetooth@3.0.2',
+    'https://cdn.jsdelivr.net/npm/gan-web-bluetooth@3.0.2/+esm'
+  ];
+  for(const url of urls){
+    try{
+      const mod=await import(url);
+      const fn=mod.connectGanCube||(mod.default&&mod.default.connectGanCube);
+      if(typeof fn==='function')return fn;
+    }catch(e){console.warn('GAN import failed',url,e)}
+  }
+  return null;
+}
+async function loadCubingConnect(){
+  return null; // other brands via cubing.js disabled (CDN unreliable offline)
+}
+function errMsg(err){
+  if(!err)return 'Unknown error';
+  if(err.name==='NotFoundError')return 'No device selected';
+  if(err.name==='SecurityError')return 'Bluetooth blocked (need HTTPS or localhost)';
+  if(err.name==='NetworkError')return 'Cube disconnected during setup';
+  if(err.name==='InvalidStateError')return 'Bluetooth busy — try again';
+  const m=String(err.message||err);
+  if(/MAC|mac address/i.test(m))return 'MAC address required — try again and enter it when prompted';
+  if(/service|unsupported/i.test(m))return 'Unsupported cube model/firmware';
+  return m.slice(0,120);
+}
+async function toggleBt(){
+  if(btBusy)return;
+  if(btConn){
+    await disconnectBt();
+    toast('Bluetooth disconnected');
+    return;
+  }
+  if(!window.isSecureContext){
+    toast('Bluetooth needs HTTPS or localhost (not file://)');
+    return;
+  }
+  if(!navigator.bluetooth){
+    toast('Web Bluetooth missing — use Chrome/Edge');
+    return;
+  }
+  btBusy=true;
+  const btn=$('#bt');
+  if(btn)btn.textContent='…';
+  try{
+    const ganConnect=await loadGanConnect();
+    if(ganConnect){
+      try{
+        toast('Pick your GAN cube…');
+        const conn=await ganConnect(ganMacProvider);
+        btConn=conn;btKind='gan';
+        const name=conn.deviceName||(conn.device&&conn.device.name)||'GAN cube';
+        setBtUi(true,name);
+        toast('Connected: '+name);
+        if(conn.events$&&conn.events$.subscribe)btSub=conn.events$.subscribe(onGanEvent);
+        try{await conn.sendCubeCommand({type:'REQUEST_FACELETS'})}catch(_){}
+        return;
+      }catch(err){
+        console.warn('GAN connect error',err);
+        if(err&&err.name==='NotFoundError'){toast('No device selected');return}
+        toast('GAN failed: '+errMsg(err)+' — trying other brands…');
+      }
+    }
+    const cubingConnect=await loadCubingConnect();
+    if(cubingConnect){
+      try{
+        toast('Pick any smart cube…');
+        const puzzle=await cubingConnect();
+        btConn=puzzle;btKind='cubing';
+        const name=(puzzle.name&&puzzle.name())||'Smart cube';
+        setBtUi(true,name);
+        toast('Connected: '+name);
+        puzzle.addAlgLeafListener(onCubingMove);
+        try{
+          const dev=puzzle.server&&puzzle.server.device;
+          if(dev)dev.addEventListener('gattserverdisconnected',()=>{
+            btConn=null;btKind=null;setBtUi(false);toast('Cube disconnected');
+          });
+        }catch(_){}
+        return;
+      }catch(err){
+        console.warn('cubing connect error',err);
+        toast('Connect failed: '+errMsg(err));
+        setBtUi(false);
+        return;
+      }
+    }
+    toast('Could not load Bluetooth libraries (check network)');
+    setBtUi(false);
+  }finally{
+    btBusy=false;
+    if(!btConn)setBtUi(false);
+  }
+}
+
+/* wiring */
+$('#list').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(b)openSolve(+b.dataset.i)});
+$('#quick').addEventListener('click',e=>{
+  const b=e.target.closest('[data-q]');if(!b)return;
+  const s=ss(),x=s.solves[s.solves.length-1],q=b.dataset.q;
+  if(q==='p2')x.pen=x.pen===2000?0:2000;
+  else if(q==='dnf')x.pen=x.pen<0?0:-1;
+  else if(q==='del')s.solves.pop();
+  else if(q==='note'){openNote(s.solves.length-1);return}
+  save();render();
+});
+$('#sess').onchange=e=>{S.cur=+e.target.value;save();scrs=[];newScr();render();e.target.blur()};
+$('#ev').onchange=e=>{ss().event=e.target.value;save();scrs=[];newScr();render();e.target.blur()};
+$('#mode').onchange=e=>{setMode(e.target.value);e.target.blur()};
+document.getElementById('methodRow').addEventListener('click',e=>{
+  const b=e.target.closest('[data-method]');
+  if(b)setMethod(b.dataset.method);
+});
+document.getElementById('stageRow').addEventListener('click',e=>{
+  const b=e.target.closest('[data-mode]');
+  if(b)setMode(b.dataset.mode);
+});
+$('#prev').onclick=()=>{if(si>0){si--;showScr()}};
+$('#next').onclick=()=>{si<scrs.length-1?(si++,showScr()):newScr()};
+$('#newS').onclick=openNew;
+$('#data').onclick=openData;
+$('#help').onclick=openHelp;
+$('#bt').onclick=toggleBt;
+$('#theme').onclick=()=>{
+  const order=THEMES.map(t=>t[0]);
+  const i=order.indexOf(S.set.theme);
+  S.set.theme=order[(i+1)%order.length];
+  save();render();
+};
+$('#themeSel').onchange=e=>{S.set.theme=e.target.value;save();render();e.target.blur()};
+$('#fontSel').onchange=e=>{S.set.font=e.target.value;save();render();e.target.blur()};
+$('#sizeSel').onchange=e=>{S.set.size=e.target.value;save();render();e.target.blur()};
+for(const[k,id]of[['insp','insp'],['hide','hide'],['ms','ms'],['snd','snd'],['man','mn'],['img','img']])
+  $('#'+id).onchange=e=>{S.set[k]=e.target.checked;save();render();e.target.blur();if(k==='man'&&e.target.checked)$('#man').focus()};
+$('#logo').innerHTML=['red','blu','yel','grn','org','mute','blu','red','grn'].map(c=>`<i style="background:var(--${c})"></i>`).join('');
+try{const v=document.querySelector('.brand');if(v&&!v.querySelector('.ver')){const s=document.createElement('span');s.className='ver';s.textContent='web';s.style.cssText='font-size:10px;color:var(--mute);margin-left:6px;font-weight:500';v.appendChild(s)}}catch(_){}
+newScr();render();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
