@@ -1539,19 +1539,30 @@ dg.addEventListener('click',e=>{
 });
 dg.addEventListener('close',()=>pad.focus());
 
-/* Bluetooth — GAN (gan-web-bluetooth) + cubing.js fallback */
+/* Bluetooth — GAN (gan-web-bluetooth), optimized pairing */
 let btConn=null,btKind=null,btSub=null,btMoveCount=0,btBusy=false;
+let ganConnectFn=null,ganLoadPromise=null,btLastName='';
 const SOLVED_FACELETS='UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
-function setBtUi(connected,name){
+const BT_MAC_KEY='cubetimer.ganMac.last';
+const BT_NAME_KEY='cubetimer.btLastName';
+function setBtUi(connected,name,status){
   const b=$('#bt');
   if(!b)return;
+  if(status){
+    b.textContent=status;
+    b.title=status;
+    b.style.borderColor='var(--org)';
+    return;
+  }
   if(connected){
     b.textContent='BT ✓';
     b.title=name?`Connected: ${name} (click to disconnect)`:'Connected (click to disconnect)';
     b.style.borderColor='var(--grn)';
   }else{
+    let last='';
+    try{last=localStorage.getItem(BT_NAME_KEY)||''}catch(_){}
     b.textContent='BT';
-    b.title='Connect smart cube (Chrome/Edge + HTTPS/localhost)';
+    b.title=last?`Reconnect ${last} (Chrome/Edge + HTTPS)`:'Connect smart cube (Chrome/Edge + HTTPS/localhost)';
     b.style.borderColor='';
   }
 }
@@ -1560,6 +1571,7 @@ function btStartFromMove(){
     pen=0;
     st='run';t0=performance.now();
     document.body.classList.add('running');
+    stopScrPlay();updateScramHelper();
     setS('run','');
     tick();
     btMoveCount=1;
@@ -1599,44 +1611,77 @@ async function disconnectBt(){
       else if(btKind==='cubing'&&btConn.disconnect)btConn.disconnect();
     }
   }catch(_){}
-  btConn=null;btKind=null;btSub=null;
+  btConn=null;btKind=null;btSub=null;btSub=null;
   setBtUi(false);
 }
-/* GAN needs MAC for AES keys; prompt if browser cannot auto-read ads */
+function normalizeMac(mac){
+  if(!mac)return '';
+  const clean=String(mac).trim().toUpperCase().replace(/-/g,':').replace(/[^0-9A-F:]/g,'');
+  return /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(clean)?clean:'';
+}
+/* Prefer saved MAC (no prompt). Only prompt when library requires it and nothing saved. */
 async function ganMacProvider(device,isFallback){
-  if(!isFallback)return null;
-  const key='cubetimer.ganMac.'+(device&&device.id||'');
+  const idKey='cubetimer.ganMac.'+(device&&device.id||'unknown');
   let saved='';
-  try{saved=localStorage.getItem(key)||''}catch(_){}
+  try{saved=localStorage.getItem(idKey)||localStorage.getItem(BT_MAC_KEY)||''}catch(_){}
+  saved=normalizeMac(saved);
+  // Auto-use cached MAC whenever possible (faster re-pair)
+  if(saved){
+    try{localStorage.setItem(idKey,saved);localStorage.setItem(BT_MAC_KEY,saved)}catch(_){}
+    return saved;
+  }
+  if(!isFallback)return null;
   const mac=prompt(
-    'Enter this GAN cube MAC address (from CubeStation or the box), like AA:BB:CC:DD:EE:FF\\n\\nNeeded once for encryption.',
-    saved
+    'Enter this GAN cube MAC (CubeStation / box), e.g. AA:BB:CC:DD:EE:FF\n\nSaved after first success — only needed once.',
+    ''
   );
-  if(!mac)return null;
-  const clean=mac.trim().toUpperCase().replace(/-/g,':');
-  if(!/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(clean)){
-    toast('Invalid MAC format');
+  const clean=normalizeMac(mac);
+  if(!clean){
+    if(mac)toast('Invalid MAC format (use AA:BB:CC:DD:EE:FF)');
     return null;
   }
-  try{localStorage.setItem(key,clean)}catch(_){}
+  try{
+    localStorage.setItem(idKey,clean);
+    localStorage.setItem(BT_MAC_KEY,clean);
+  }catch(_){}
   return clean;
 }
 async function loadGanConnect(){
-  const urls=[
-    'https://esm.sh/gan-web-bluetooth@3.0.2',
-    'https://cdn.jsdelivr.net/npm/gan-web-bluetooth@3.0.2/+esm'
-  ];
-  for(const url of urls){
-    try{
-      const mod=await import(url);
-      const fn=mod.connectGanCube||(mod.default&&mod.default.connectGanCube);
-      if(typeof fn==='function')return fn;
-    }catch(e){console.warn('GAN import failed',url,e)}
-  }
-  return null;
+  if(ganConnectFn)return ganConnectFn;
+  if(ganLoadPromise)return ganLoadPromise;
+  ganLoadPromise=(async()=>{
+    const urls=[
+      'https://esm.sh/gan-web-bluetooth@3.0.2',
+      'https://cdn.jsdelivr.net/npm/gan-web-bluetooth@3.0.2/+esm',
+      'https://unpkg.com/gan-web-bluetooth@3.0.2/dist/index.js'
+    ];
+    for(const url of urls){
+      try{
+        const mod=await import(url);
+        const fn=mod.connectGanCube||(mod.default&&mod.default.connectGanCube)||mod.default;
+        if(typeof fn==='function'){
+          ganConnectFn=fn;
+          return fn;
+        }
+      }catch(e){console.warn('GAN import failed',url,e)}
+    }
+    return null;
+  })();
+  try{return await ganLoadPromise}
+  finally{/* keep cache */}
 }
-async function loadCubingConnect(){
-  return null; // other brands via cubing.js disabled (CDN unreliable offline)
+// Preload library in background after first paint
+function preloadBtLib(){
+  if(!window.isSecureContext||!navigator.bluetooth)return;
+  if(ganConnectFn||ganLoadPromise)return;
+  const run=()=>loadGanConnect().catch(()=>{});
+  if('requestIdleCallback' in window)requestIdleCallback(run,{timeout:4000});
+  else setTimeout(run,1500);
+}
+function withTimeout(promise,ms,label){
+  let to;
+  const t=new Promise((_,rej)=>{to=setTimeout(()=>rej(new Error(label||'Connection timed out')),ms)});
+  return Promise.race([promise,t]).finally(()=>clearTimeout(to));
 }
 function errMsg(err){
   if(!err)return 'Unknown error';
@@ -1644,10 +1689,24 @@ function errMsg(err){
   if(err.name==='SecurityError')return 'Bluetooth blocked (need HTTPS or localhost)';
   if(err.name==='NetworkError')return 'Cube disconnected during setup';
   if(err.name==='InvalidStateError')return 'Bluetooth busy — try again';
+  if(err.name==='NotSupportedError')return 'Cube not supported in this browser';
   const m=String(err.message||err);
-  if(/MAC|mac address/i.test(m))return 'MAC address required — try again and enter it when prompted';
+  if(/timed out|timeout/i.test(m))return 'Connection timed out — hold cube near PC and retry';
+  if(/MAC|mac address/i.test(m))return 'MAC needed — enter it when prompted (saved for next time)';
   if(/service|unsupported/i.test(m))return 'Unsupported cube model/firmware';
   return m.slice(0,120);
+}
+async function finishGanConnect(conn){
+  btConn=conn;btKind='gan';
+  const name=conn.deviceName||(conn.device&&conn.device.name)||btLastName||'GAN cube';
+  btLastName=name;
+  try{localStorage.setItem(BT_NAME_KEY,name)}catch(_){}
+  setBtUi(true,name);
+  toast('Connected: '+name);
+  if(conn.events$&&conn.events$.subscribe)btSub=conn.events$.subscribe(onGanEvent);
+  // Warm up facelets so first solve detect is fast
+  try{await conn.sendCubeCommand({type:'REQUEST_FACELETS'})}catch(_){}
+  try{if(conn.sendCubeCommand)await conn.sendCubeCommand({type:'REQUEST_HARDWARE_INFO'})}catch(_){}
 }
 async function toggleBt(){
   if(btBusy)return;
@@ -1665,58 +1724,41 @@ async function toggleBt(){
     return;
   }
   btBusy=true;
-  const btn=$('#bt');
-  if(btn)btn.textContent='…';
+  setBtUi(false,null,'…');
   try{
+    setBtUi(false,null,'Loading…');
     const ganConnect=await loadGanConnect();
     if(ganConnect){
       try{
-        toast('Pick your GAN cube…');
-        const conn=await ganConnect(ganMacProvider);
-        btConn=conn;btKind='gan';
-        const name=conn.deviceName||(conn.device&&conn.device.name)||'GAN cube';
-        setBtUi(true,name);
-        toast('Connected: '+name);
-        if(conn.events$&&conn.events$.subscribe)btSub=conn.events$.subscribe(onGanEvent);
-        try{await conn.sendCubeCommand({type:'REQUEST_FACELETS'})}catch(_){}
+        setBtUi(false,null,'Pair…');
+        toast('Pick your cube in the browser popup…');
+        const conn=await withTimeout(ganConnect(ganMacProvider),45000,'Connection timed out');
+        await finishGanConnect(conn);
         return;
       }catch(err){
         console.warn('GAN connect error',err);
         if(err&&err.name==='NotFoundError'){toast('No device selected');return}
-        toast('GAN failed: '+errMsg(err)+' — trying other brands…');
-      }
-    }
-    const cubingConnect=await loadCubingConnect();
-    if(cubingConnect){
-      try{
-        toast('Pick any smart cube…');
-        const puzzle=await cubingConnect();
-        btConn=puzzle;btKind='cubing';
-        const name=(puzzle.name&&puzzle.name())||'Smart cube';
-        setBtUi(true,name);
-        toast('Connected: '+name);
-        puzzle.addAlgLeafListener(onCubingMove);
-        try{
-          const dev=puzzle.server&&puzzle.server.device;
-          if(dev)dev.addEventListener('gattserverdisconnected',()=>{
-            btConn=null;btKind=null;setBtUi(false);toast('Cube disconnected');
-          });
-        }catch(_){}
-        return;
-      }catch(err){
-        console.warn('cubing connect error',err);
         toast('Connect failed: '+errMsg(err));
-        setBtUi(false);
-        return;
       }
+    }else{
+      toast('Could not load Bluetooth library (check network)');
     }
-    toast('Could not load Bluetooth libraries (check network)');
-    setBtUi(false);
+    if(!btConn)setBtUi(false);
   }finally{
     btBusy=false;
     if(!btConn)setBtUi(false);
   }
 }
+
+// Preload GAN library after idle + on BT button hover
+preloadBtLib();
+try{
+  const btBtn=$('#bt');
+  if(btBtn){
+    btBtn.addEventListener('pointerenter',()=>preloadBtLib(),{passive:true});
+    btBtn.addEventListener('focus',()=>preloadBtLib(),{passive:true});
+  }
+}catch(_){}
 
 /* wiring */
 $('#list').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(b)openSolve(+b.dataset.i)});
